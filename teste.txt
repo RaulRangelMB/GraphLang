@@ -1,0 +1,8 @@
+{
+    var v1 vertice = "hou" + "se"
+    var v2 vertice = "work"
+    var e1 edge = "path"
+    connect v1 v2 with e1 both
+
+    Println(path(v1, v2))
+}
