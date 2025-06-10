@@ -1,8 +1,15 @@
 {
     var v1 vertice = "hou" + "se"
     var v2 vertice = "work"
-    var e1 edge = "path"
+    var v3 vertice = "school"
+    var v4 vertice = "station"
+    var e1 edge = "car"
+    var e2 edge = "walk"
+    var e3 edge = "bus"
     connect v1 v2 with e1 both
+    connect v1 v3 with e2 right
+    connect v1 v4 with e1 both
+    connect v2 v4 with e3 both
 
-    Println(path(v1, v2))
+    //Println(path(v4, v3))
 }
