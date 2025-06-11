@@ -8,8 +8,13 @@
     var e3 edge = "bus"
     connect v1 v2 with e1 both
     connect v1 v3 with e2 right
-    connect v1 v4 with e1 both
-    connect v2 v4 with e3 both
+    
+    var x int = 2
 
-    //Println(path(v4, v3))
+    if x == 1 {
+        connect v2 v4 with e3 both
+        connect v1 v4 with e1 both
+    }
+
+    Println(path(v4, v3))
 }

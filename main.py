@@ -113,13 +113,16 @@ class ConnectionTable:
         for v1, connections_from_v1 in self.table.items():
             for v2, edges_between in connections_from_v1.items():
                 for edge, direction in edges_between.items():
-                    if v1 in self.symbol_table.table: v1 = self.symbol_table.get(v1)[1]
-                    if v2 in self.symbol_table.table: v2 = self.symbol_table.get(v2)[1]
-                    if edge in self.symbol_table.table: edge = self.symbol_table.get(edge)[1]
-                    if direction == 'BOTH': middle = f"<-[{edge}]->"
-                    elif direction == 'LEFT': middle = f"<-[{edge}]--"
-                    elif direction == 'RIGHT': middle = f"--[{edge}]->"
-                    print(f"{v1} {middle} {v2}")
+                    if v1 in self.symbol_table.table: v1_value = self.symbol_table.get(v1)[1]
+                    if v1_value is None: v1_value = v1
+                    if v2 in self.symbol_table.table: v2_value = self.symbol_table.get(v2)[1]
+                    if v2_value is None: v2_value = v2
+                    if edge in self.symbol_table.table: edge_value = self.symbol_table.get(edge)[1]
+                    if edge_value is None: edge_value = edge
+                    if direction == 'BOTH': middle = f"<-[{edge_value}]->"
+                    elif direction == 'LEFT': middle = f"<-[{edge_value}]--"
+                    elif direction == 'RIGHT': middle = f"--[{edge_value}]->"
+                    print(f"{v1_value} {middle} {v2_value}")
         print("------------------------\n")
 
 def findPath(vertice1, vertice2, symboltable, connections):
@@ -140,7 +143,11 @@ def findPath(vertice1, vertice2, symboltable, connections):
                 connections2[startVertice].append(endVertice)
                 connections2[endVertice].append(startVertice)
 
-    print(f"Path from {symboltable.get(vertice1.value)[1]} to {symboltable.get(vertice2.value)[1]}: ", end='')
+    start = symboltable.get(vertice1.value)[1]
+    if start is None: start = vertice1.value
+    end = symboltable.get(vertice2.value)[1]
+    if end is None: end = vertice2.value
+    print(f"Path from {start} to {end}: ", end='')
     return goDownPath(vertice1.value, vertice2.value, connections2, symboltable)
 
 def goDownPath(start_vertice, target_vertice, connections, symboltable, current_path=None):
@@ -366,8 +373,8 @@ class Node:
 
 class BinOp(Node):
     def evaluate(self, symbolTable, connectionTable=None):
-        left_type, left_value = self.children[0].evaluate(symbolTable)
-        right_type, right_value = self.children[1].evaluate(symbolTable)
+        left_type, left_value = self.children[0].evaluate(symbolTable, connectionTable)
+        right_type, right_value = self.children[1].evaluate(symbolTable, connectionTable)
         
         if self.value == '+':
             if left_type == 'INT' and right_type == 'INT':
@@ -414,7 +421,7 @@ class BinOp(Node):
 
 class UnOp(Node):
     def evaluate(self, symbolTable, connectionTable=None):
-        _type, value = self.children[0].evaluate(symbolTable)
+        _type, value = self.children[0].evaluate(symbolTable, connectionTable)
         if _type != 'INT' and _type != 'BOOL':
             raise Exception(f"Operação Inválida: {self.value} {_type}")
         
@@ -441,14 +448,6 @@ class BoolVal(Node):
     def evaluate(self, symbolTable, connectionTable=None):
         return ("BOOL", self.value)
     
-class VerticeVal(Node):
-    def evaluate(self, symbolTable):
-        return ("TYPE", self.value)
-
-class EdgeVal(Node):
-    def evaluate(self, symbolTable):
-        return ("TYPE", self.value)
-    
 class VarDec(Node):
     def __init__(self, identifier, _type, bexpr=None):
         self.type = _type
@@ -457,11 +456,11 @@ class VarDec(Node):
     def evaluate(self, symbolTable, connectionTable=None):
         if self.children[1] is not None:
             if self.type in ['EDGE', 'VERTICE']:
-                symbolTable.create(self.children[0].value, self.type, self.children[1].evaluate(symbolTable)[1])
+                symbolTable.create(self.children[0].value, self.type, self.children[1].evaluate(symbolTable, connectionTable)[1])
                 return
-            elif self.type != self.children[1].evaluate(symbolTable)[0]:
+            elif self.type != self.children[1].evaluate(symbolTable, connectionTable)[0]:
                 raise Exception(f"Input Inválido: variável {self.type} {self.children[0].value} atribuída com {self.children[1].evaluate(symbolTable)[0]} (em VarDec)")
-            value = self.children[1].evaluate(symbolTable)
+            value = self.children[1].evaluate(symbolTable, connectionTable)
             symbolTable.create(self.children[0].value, self.type, value[1])
         else:
             symbolTable.create(self.children[0].value, self.type, None)
@@ -485,11 +484,11 @@ class Println(Node):
             if res is None:
                 print(f"No path found.")
             else:
-                res = " -> ".join([symbolTable.get(v)[1] for v in res])
+                res = " -> ".join([symbolTable.get(v)[1] if symbolTable.get(v)[1] is not None else v for v in res])
                 print(res)
             return res
         
-        _type, value = self.children[0].evaluate(symbolTable)
+        _type, value = self.children[0].evaluate(symbolTable, connectionTable)
         if _type == 'INT':
             print(value)
         elif _type == 'STRING':
@@ -531,8 +530,8 @@ class Assignment(Node):
     def __init__(self, identifier, expression):
         self.children = [identifier, expression]
 
-    def evaluate(self, symbolTable):
-        _type, value = self.children[1].evaluate(symbolTable)
+    def evaluate(self, symbolTable, connectionTable=None):
+        _type, value = self.children[1].evaluate(symbolTable, connectionTable)
 
         if _type != symbolTable.get(self.children[0].value)[0]:
             raise Exception(f"Input Inválido: variável {symbolTable.get(self.children[0].value)[0]} {self.children[0].value} atribuída com {_type}")
@@ -557,28 +556,28 @@ class If(Node):
     def __init__(self, condition, block_true, block_false=None):
         self.children = [condition, block_true, block_false]
 
-    def evaluate(self, symbolTable):
-        if self.children[0].evaluate(symbolTable)[0] != 'BOOL':
-            raise Exception(f"Input Inválido: {self.children[0].evaluate(symbolTable)[0]} usado na condição do IF")
+    def evaluate(self, symbolTable, connectionTable = None):
+        if self.children[0].evaluate(symbolTable, connectionTable)[0] != 'BOOL':
+            raise Exception(f"Input Inválido: {self.children[0].evaluate(symbolTable, connectionTable)[0]} usado na condição do IF")
 
-        if self.children[0].evaluate(symbolTable)[-1]:
-            self.children[1].evaluate(symbolTable)
+        if self.children[0].evaluate(symbolTable, connectionTable)[-1]:
+            self.children[1].evaluate(symbolTable, connectionTable)
         elif self.children[2] is not None:
-            self.children[2].evaluate(symbolTable)
+            self.children[2].evaluate(symbolTable, connectionTable)
 
 class While(Node):
     def __init__(self, condition, block):
         self.children = [condition, block]
 
-    def evaluate(self, symbolTable):
+    def evaluate(self, symbolTable, connectionTable=None):
         if self.children[0].evaluate(symbolTable)[0] != 'BOOL':
             raise Exception(f"Input Inválido: {self.children[0].evaluate(symbolTable)[0]} (em while)")
         
-        while self.children[0].evaluate(symbolTable)[-1]:
-            self.children[1].evaluate(symbolTable)
+        while self.children[0].evaluate(symbolTable, connectionTable)[-1]:
+            self.children[1].evaluate(symbolTable, connectionTable)
 
 class Read(Node):
-    def evaluate(self, symbolTable):
+    def evaluate(self, symbolTable, connectionTable=None):
         return ("INT", int(input()))
 
 class Parser:
@@ -782,30 +781,20 @@ class Parser:
             node = StrVal(self.tokenizer.next.value, [])
             self.tokenizer.selectNext()
             return node
-        
+
         elif self.tokenizer.next.type == 'BOOL':
             node = BoolVal(self.tokenizer.next.value, [])
             self.tokenizer.selectNext()
             return node
-        
-        elif self.tokenizer.next.type == 'VERTICE':
-            node = VerticeVal(self.tokenizer.next.value, [])
-            self.tokenizer.selectNext()
-            return node
-        
-        elif self.tokenizer.next.type == 'EDGE':
-            node = EdgeVal(self.tokenizer.next.value, [])
-            self.tokenizer.selectNext()
-            return node
-        
+
         elif self.tokenizer.next.type == 'PLUS':
             self.tokenizer.selectNext()
             return UnOp('+', [self.parseFactor()])
-        
+
         elif self.tokenizer.next.type == 'MINUS':
             self.tokenizer.selectNext()
             return UnOp('-', [self.parseFactor()])
-        
+
         elif self.tokenizer.next.type == 'NOT':
             self.tokenizer.selectNext()
             return UnOp('!', [self.parseFactor()])

@@ -2,7 +2,7 @@ BEXPRESSION = BTERM , { ( "||" ), BTERM } ;
 BTERM = RELEXPRESSION , { ( "&&" ), RELEXPRESSION } ; 
 RELEXPRESSION = EXPRESSION, { ("==" | ">" | "<"), EXPRESSION } ;
 BLOCK = "{", "\n", { STATEMENT }, "}";
-STATEMENT = ( λ | ASSIGNMENT | PRINT | VARDEC | CONNECT | IF | WHILE | PATH), "\n" ;
+STATEMENT = ( λ | ASSIGNMENT | PRINT | VARDEC | CONNECT | IF | WHILE ), "\n" ;
 VARDEC = "var", IDENTIFIER, TYPE, [ "=", BEXPRESSION ] ;
 TYPE = ( "int" | "bool" | "string" | "vertice" | "edge" ) ;
 CONNECT = "connect", IDENTIFIER, IDENTIFIER, "with", IDENTIFIER, DIRECTION ;
