@@ -41,38 +41,30 @@ class ConnectionTable:
         vertice2_name = vertice2_node.value
         edge_name = edge_node.value
 
-        # --- Type and Existence Checks ---
-        # Check if vertice1 exists and is of type 'VERTICE'
         if not self.symbol_table.get(vertice1_name):
             raise Exception(f"Erro de Conexão: Vértice '{vertice1_name}' não declarado na SymbolTable.")
         vertice1_data = self.symbol_table.get(vertice1_name)
         if vertice1_data[0] != 'VERTICE':
             raise Exception(f"Erro de Conexão: '{vertice1_name}' não é do tipo VERTICE.")
 
-        # Check if vertice2 exists and is of type 'VERTICE'
         if not self.symbol_table.get(vertice2_name):
             raise Exception(f"Erro de Conexão: Vértice '{vertice2_name}' não declarado na SymbolTable.")
         vertice2_data = self.symbol_table.get(vertice2_name)
         if vertice2_data[0] != 'VERTICE':
             raise Exception(f"Erro de Conexão: '{vertice2_name}' não é do tipo VERTICE.")
 
-        # Check if edge exists and is of type 'EDGE'
         if not self.symbol_table.get(edge_name):
             raise Exception(f"Erro de Conexão: Aresta '{edge_name}' não declarada na SymbolTable.")
         edge_data = self.symbol_table.get(edge_name)
         if edge_data[0] != 'EDGE':
             raise Exception(f"Erro de Conexão: '{edge_name}' não é do tipo EDGE.")
-        # --- End Type and Existence Checks ---
 
-        # Store the connection
         if vertice1_name not in self.table:
             self.table[vertice1_name] = {}
         if vertice2_name not in self.table[vertice1_name]:
             self.table[vertice1_name][vertice2_name] = {}
         
-        # Prevent overwriting an existing edge between the same two vertices in the same direction
         if edge_name in self.table[vertice1_name][vertice2_name]:
-            # You might want a different error message or overwrite behavior depending on your language's semantics
             raise Exception(f"Erro de Conexão: Aresta '{edge_name}' já conecta '{vertice1_name}' e '{vertice2_name}' na direção '{self.table[vertice1_name][vertice2_name][edge_name]}'.")
 
         self.table[vertice1_name][vertice2_name][edge_name] = direction_token_type
@@ -154,23 +146,18 @@ def goDownPath(start_vertice, target_vertice, connections, symboltable, current_
     if current_path is None:
         current_path = []
 
-    # Add the current vertice to the path and visited set
-    current_path = current_path + [start_vertice] # Create a new list for the next recursion level
+    current_path = current_path + [start_vertice]
 
-    # Base case 1: If current_vertice is the target_vertice
     if start_vertice == target_vertice:
         return current_path
 
-    # Base case 2: If the current vertice has no outgoing connections
     if start_vertice not in connections or not connections[start_vertice]:
-        # print(f"No outgoing connections from {start_vertice}. Backtracking.")
         return None
 
     # Explore neighbors
     for next_vertice in connections[start_vertice]:
         if next_vertice not in current_path:
             # print(f"Exploring neighbor: {next_vertice}")
-            # Recursive call: pass a NEW path list and a NEW visited set
             path_found = goDownPath(next_vertice, target_vertice, connections, symboltable, list(current_path))
             if path_found:
                 return path_found # If a path is found by a recursive call, propagate it up
@@ -511,20 +498,8 @@ class Connect(Node):
         self.direction = direction # String ('LEFT', 'RIGHT', 'BOTH')
 
     def evaluate(self, symbol_table, connection_table):
-        # The connection_table needs to be passed down or be a global/singleton
-        # I'm passing it as an argument here, which is a common pattern for specific tables.
-        
-        # Ensure that the Identifier nodes have their 'value' attribute accessible.
-        # The 'evaluate' method of Identifier usually just returns its value.
-        # However, for consistency, we'll pass the Identifier nodes themselves
-        # to the ConnectionTable.create method, so it can access their 'value'
-        # and also their 'type' if needed (via symbol_table lookup).
-
-        # Pass the Identifier nodes and the raw direction token type (e.g., 'BOTH')
         connection_table.create(self.vertice1, self.vertice2, self.edge, self.direction)
-        # A connect statement typically doesn't return a value, so a NoOp equivalent
-        # or simply returning None is appropriate.
-        return None # Or some indicator of successful operation if needed
+        return None
 
 class Assignment(Node):
     def __init__(self, identifier, expression):
