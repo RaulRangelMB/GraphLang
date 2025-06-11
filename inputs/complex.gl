@@ -1,0 +1,32 @@
+{
+    var A vertice = "A"
+    var B vertice = "B"
+    var C vertice = "G"
+    var D vertice = "D"
+    var E vertice = "E"
+
+    var road1 edge = "RoadA_B"
+    var road2 edge = "RoadA_C"
+    var road3 edge = "RoadB_D"
+    var road4 edge = "RoadC_D"
+    var road5 edge = "RoadD_E"
+    var shortcut edge = "ShortcutA_E"
+
+    // Connections
+    connect A B with road1 right  
+    connect A C with road2 left
+    connect B D with road3 both
+    connect C D with road4 right
+    connect D E with road5 right
+    connect A E with shortcut both
+
+    Println(path(A, E))
+
+    Println(path(C, E))
+
+    Println(path(B, A))
+
+    Println(path(A, D))
+
+    Println(path(E, C)) // Should not find a path
+}

@@ -533,11 +533,25 @@ class Assignment(Node):
     def evaluate(self, symbolTable, connectionTable=None):
         _type, value = self.children[1].evaluate(symbolTable, connectionTable)
 
-        if _type != symbolTable.get(self.children[0].value)[0]:
-            raise Exception(f"Input Inválido: variável {symbolTable.get(self.children[0].value)[0]} {self.children[0].value} atribuída com {_type}")
+        if symbolTable.get(self.children[0].value)[0] in ['EDGE', 'VERTICE']:
+            symbolTable.set(self.children[0].value, (_type, value))
+        elif _type != symbolTable.get(self.children[0].value)[0]:
+            raise Exception(f"Input Inválido: variável {symbolTable.get(self.children[0].value)[0]} {self.children[0].value} atribuída com {_type} (em assignment)")
         
         symbolTable.set(self.children[0].value, (_type, value))
-        return value        
+        return value
+    
+    # def evaluate(self, symbolTable, connectionTable=None):
+    #     if self.children[1] is not None:
+    #         if self.type in ['EDGE', 'VERTICE']:
+    #             symbolTable.create(self.children[0].value, self.type, self.children[1].evaluate(symbolTable, connectionTable)[1])
+    #             return
+    #         elif self.type != self.children[1].evaluate(symbolTable, connectionTable)[0]:
+    #             raise Exception(f"Input Inválido: variável {self.type} {self.children[0].value} atribuída com {self.children[1].evaluate(symbolTable)[0]} (em VarDec)")
+    #         value = self.children[1].evaluate(symbolTable, connectionTable)
+    #         symbolTable.create(self.children[0].value, self.type, value[1])
+    #     else:
+            # symbolTable.create(self.children[0].value, self.type, None)
         
         # value = self.children[1].evaluate(symbolTable)
         # #print(f"{value} to {self.children[0].value}")
