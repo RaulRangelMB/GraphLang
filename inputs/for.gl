@@ -1,0 +1,12 @@
+{
+    var x int
+
+    Println("Enter a value: ")
+
+    x = Scan()
+
+    for x > 0 {
+        Println(x)
+        x = x - 1
+    }
+}
